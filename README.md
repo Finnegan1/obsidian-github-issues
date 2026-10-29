@@ -129,6 +129,7 @@ Projects v2 and sub-issues require an Enterprise Server version that provides th
 - **401 / invalid token**: create the token on the configured instance and check expiration and token permissions.
 - **403 / 404**: check repository spelling/access, organisation token approval and SSO requirements. GitHub may return 404 for repositories you cannot access.
 - **Network / certificate error**: check VPN, DNS and system trust for your corporate CA. Do not disable certificate verification.
+- **Valid token but no issue notes**: update this fork to **1.10.1 or newer**. Earlier versions could lose the authenticated user after settings changes, so “Assigned to me” / “Review requested from me” filters excluded matching items. Also check the repository's active profile: “Assigned to me” deliberately excludes unassigned issues and issues assigned only to other users. Default issue notes are saved under `GitHub/<owner>/<repository>/` relative to the **vault root**, not the currently open note's folder.
 - **BRAT cannot find a release**: use `Finnegan1/obsidian-github-issues`, not your Enterprise repository URL. The plugin is downloaded from this public fork; only its issue/PR data comes from Enterprise.
 
 ### GitLab
@@ -156,6 +157,11 @@ npm run build
 ```
 
 To publish an update, run `npm version minor --no-git-tag-version` (or `patch`), which updates `package.json`, `package-lock.json`, `manifest.json` and `versions.json`. Commit those files with the implementation, push to this fork, then create and push the matching tag (for example `1.10.0`). The Release workflow tests and builds the plugin and uploads **`main.js`**, **`manifest.json`** and **`styles.css`** as individual GitHub Release assets for BRAT. It does not push automatic version commits. For a first release or repair, the workflow can also be run manually from the Actions tab.
+
+### 1.10.1
+
+- Restore each provider's authenticated user before syncing when settings changes have reset the client, preserving assignee and reviewer filters.
+- Regression coverage for single-repository syncing after a settings save and full syncing with different users on multiple instances.
 
 ### 1.10.0
 

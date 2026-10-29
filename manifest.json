@@ -1,7 +1,7 @@
 {
 	"id": "github-issues",
 	"name": "Github Issues",
-	"version": "1.10.0",
+	"version": "1.10.1",
 	"minAppVersion": "1.11.4",
 	"description": "Track GitHub, GitHub Enterprise and GitLab issues and pull/merge requests directly in your vault.",
 	"author": "LonoxX, Finnegan1",

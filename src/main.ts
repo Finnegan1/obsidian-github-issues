@@ -215,6 +215,12 @@ export default class IssueTrackerPlugin extends Plugin {
 		try {
 			this.noticeManager.info("Syncing issues and pull requests");
 			await this.resolveGitLabProjectIds();
+			// Settings changes rebuild clients and clear their cached identity.
+			for (const provider of this.providerRegistry.getEnabled()) {
+				if (!provider.getCurrentUser()) {
+					await provider.fetchAuthenticatedUser();
+				}
+			}
 			await this.fetchIssues();
 			await this.fetchPullRequests();
 			await this.syncProjects();
@@ -325,6 +331,9 @@ export default class IssueTrackerPlugin extends Plugin {
 
 		this.isSyncing = true;
 		try {
+			if (!provider.getCurrentUser()) {
+				await provider.fetchAuthenticatedUser();
+			}
 			const effectiveRepo = getEffectiveRepoSettings(repo, this.settings);
 			this.noticeManager.info(`Syncing repository: ${repositoryName}`);
 			const { owner, repo: repoName } = parseRepository(repo.repository);
