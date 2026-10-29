@@ -46,7 +46,16 @@ export class IssueTrackerSettingTab extends PluginSettingTab {
 	/** Get display label for a provider config */
 	private getProviderLabel(config: ProviderConfig): string {
 		if (config.label) return config.label;
-		if (config.type === "github") return "GitHub";
+		if (config.type === "github") {
+			if (config.baseUrl) {
+				try {
+					return `GitHub (${new URL(config.baseUrl.trim()).hostname})`;
+				} catch {
+					return "GitHub Enterprise";
+				}
+			}
+			return "GitHub";
+		}
 		if (config.type === "gitlab") {
 			// If there are multiple GitLab instances, add the base URL
 			const gitlabCount = this.plugin.settings.providers.filter(
@@ -160,7 +169,7 @@ export class IssueTrackerSettingTab extends PluginSettingTab {
 		linksContainer.createSpan({ text: " • " });
 
 		const bugLink = linksContainer.createEl("a", {
-			href: "https://github.com/LonoxX/obsidian-github-issues/issues/new",
+			href: "https://github.com/Finnegan1/obsidian-github-issues/issues/new",
 			cls: "github-issues-header-link",
 		});
 		bugLink.setAttribute("target", "_blank");
@@ -2168,41 +2177,63 @@ export class IssueTrackerSettingTab extends PluginSettingTab {
 			}
 		});
 
-		// GitLab base URL
-		if (config.type === "gitlab") {
-			new Setting(cardBody)
-				.setName("Base URL")
-				.setDesc(
-					"Leave empty for gitlab.com, or enter your self-hosted GitLab URL",
-				)
-				.addText((text) =>
-					text
-						.setPlaceholder("https://gitlab.example.com")
-						.setValue(config.baseUrl || "")
-						.onChange(async (value) => {
-							config.baseUrl = value.trim() || undefined;
-							await this.plugin.saveSettings();
-						}),
-				);
+		// Collect callbacks that refresh label-dependent text after URL/name changes.
+		const labelUpdaters: (() => void)[] = [];
 
-			// Custom label
-			new Setting(cardBody)
-				.setName("Display name")
-				.setDesc("Custom label for this instance (optional)")
-				.addText((text) => {
-					text.setPlaceholder(this.getProviderLabel(config))
-						.setValue(config.label || "")
-						.onChange(async (value) => {
-							config.label = value.trim() || undefined;
-							await this.plugin.saveSettings();
-							nameSpan.setText(getLabel());
-							labelUpdaters.forEach((fn) => fn());
-						});
-				});
+		// Both providers support self-hosted instances.
+		let baseUrlValue = config.baseUrl || "";
+		const baseUrlSetting = new Setting(cardBody)
+			.setName("Base URL")
+			.setDesc(
+				config.type === "github"
+					? "Leave empty for github.com, or enter your GitHub Enterprise URL (optionally ending in /api/v3), then click Apply."
+					: "Leave empty for gitlab.com, or enter your self-hosted GitLab URL",
+			);
+		baseUrlSetting.addText((text) =>
+			text
+				.setPlaceholder(
+					config.type === "github"
+						? "https://github.example.com"
+						: "https://gitlab.example.com",
+				)
+				.setValue(baseUrlValue)
+				.onChange(async (value) => {
+					// Never send a saved token to a partially typed Enterprise hostname.
+					if (config.type === "github") {
+						baseUrlValue = value;
+						return;
+					}
+					config.baseUrl = value.trim() || undefined;
+					await this.plugin.saveSettings();
+					nameSpan.setText(getLabel());
+					labelUpdaters.forEach((fn) => fn());
+				}),
+		);
+		if (config.type === "github") {
+			baseUrlSetting.addButton((button) =>
+				button.setButtonText("Apply").onClick(async () => {
+					config.baseUrl = baseUrlValue.trim() || undefined;
+					await this.plugin.saveSettings();
+					nameSpan.setText(getLabel());
+					labelUpdaters.forEach((fn) => fn());
+					await this.updateTokenBadge(config.id);
+				}),
+			);
 		}
 
-		// Collect callbacks that refresh label-dependent text
-		const labelUpdaters: (() => void)[] = [];
+		new Setting(cardBody)
+			.setName("Display name")
+			.setDesc("Custom label for this instance (optional)")
+			.addText((text) => {
+				text.setPlaceholder(this.getProviderLabel(config))
+					.setValue(config.label || "")
+					.onChange(async (value) => {
+						config.label = value.trim() || undefined;
+						await this.plugin.saveSettings();
+						nameSpan.setText(getLabel());
+						labelUpdaters.forEach((fn) => fn());
+					});
+			});
 
 		// SecretStorage toggle
 		if (isSecretStorageAvailable) {
@@ -2325,7 +2356,7 @@ export class IssueTrackerSettingTab extends PluginSettingTab {
 		// Info text
 		if (config.type === "github") {
 			const tokenInfo = cardBody.createEl("p", {
-				text: "Please limit the token to the minimum permissions needed. Requirements are Issues, Pull Requests, and Repositories. ",
+				text: "Create a token on the configured GitHub instance. Grant read access to Issues, Pull Requests and repository metadata; Projects additionally need read:project (classic token) or Projects read access. ",
 			});
 			tokenInfo.addClass("github-issues-info-text");
 			const infoLink = tokenInfo.createEl("a", { text: "Learn more" });

@@ -1,11 +1,12 @@
 {
 	"name": "github-issues",
-	"version": "1.9.4",
-	"description": "Track GitHub and GitLab issues and pull/merge requests in Obsidian",
+	"version": "1.10.0",
+	"description": "Track GitHub, GitHub Enterprise and GitLab issues and pull/merge requests in Obsidian",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"test": "node --test tests/*.test.mjs",
 		"format": "npx prettier . --write",
 		"version": "node version-bump.mjs"
 	},

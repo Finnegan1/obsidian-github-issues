@@ -14,7 +14,7 @@ export interface ProviderConfig {
 	secretTokenName: string;
 	/** Display name shown in the UI (auto-generated if empty) */
 	label?: string;
-	/** GitLab base URL (e.g. https://gitlab.example.com). Leave empty for gitlab.com */
+	/** Instance URL: GitHub Enterprise (optionally ending in /api/v3) or GitLab. Empty uses the public service. */
 	baseUrl?: string;
 }
 

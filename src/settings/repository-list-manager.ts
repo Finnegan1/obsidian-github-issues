@@ -20,7 +20,16 @@ export class RepositoryListManager {
 	/** Get display label for a provider config */
 	private getProviderLabel(config: ProviderConfig): string {
 		if (config.label) return config.label;
-		if (config.type === "github") return "GitHub";
+		if (config.type === "github") {
+			if (config.baseUrl) {
+				try {
+					return `GitHub (${new URL(config.baseUrl.trim()).hostname})`;
+				} catch {
+					return "GitHub Enterprise";
+				}
+			}
+			return "GitHub";
+		}
 		if (config.type === "gitlab") {
 			const gitlabCount = this.plugin.settings.providers.filter(
 				(p) => p.type === "gitlab",

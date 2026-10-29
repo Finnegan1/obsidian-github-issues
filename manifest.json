@@ -1,11 +1,11 @@
 {
 	"id": "github-issues",
 	"name": "Github Issues",
-	"version": "1.9.4",
+	"version": "1.10.0",
 	"minAppVersion": "1.11.4",
-	"description": "Track GitHub Issues, Pull Requests, GitLab Issues and Merge Requests directly in your vault.",
-	"author": "LonoxX",
-	"authorUrl": "https://github.com/LonoxX",
+	"description": "Track GitHub, GitHub Enterprise and GitLab issues and pull/merge requests directly in your vault.",
+	"author": "LonoxX, Finnegan1",
+	"authorUrl": "https://github.com/Finnegan1/obsidian-github-issues",
 	"isDesktopOnly": false,
 	"fundingUrl": {
 		"GitHub Sponsor": "https://github.com/sponsors/LonoxX",

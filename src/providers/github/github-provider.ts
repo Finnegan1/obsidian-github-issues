@@ -56,7 +56,8 @@ export class GitHubProvider implements IssueProvider {
 		this.tokenGetter = tokenGetter;
 		this.id = providerConfig.id;
 		this.configId = providerConfig.id;
-		this.displayName = providerConfig.label || "GitHub";
+		this.displayName = providerConfig.label ||
+			(providerConfig.baseUrl ? "GitHub Enterprise" : "GitHub");
 		this.initializeClient();
 	}
 
@@ -71,6 +72,7 @@ export class GitHubProvider implements IssueProvider {
 	 * Initialize GitHub client with the current token
 	 */
 	public initializeClient(): void {
+		this.dispose();
 		const authToken = this.tokenGetter();
 
 		if (!authToken) {
@@ -80,8 +82,39 @@ export class GitHubProvider implements IssueProvider {
 			return;
 		}
 
+		const configuredBaseUrl = this.settings.providers.find(
+			(config) => config.id === this.configId,
+		)?.baseUrl?.trim().replace(/\/+$/, "");
+		let baseUrl = "https://api.github.com";
+		if (configuredBaseUrl) {
+			try {
+				const url = new URL(configuredBaseUrl);
+				if (
+					!["https:", "http:"].includes(url.protocol) ||
+					url.username || url.password || url.search || url.hash
+				) {
+					throw new Error("Invalid instance URL");
+				}
+				if (url.hostname === "github.com" || url.hostname === "api.github.com") {
+					baseUrl = "https://api.github.com";
+				} else {
+					const instanceUrl = url.toString().replace(/\/+$/, "");
+					baseUrl = instanceUrl.endsWith("/api/v3")
+						? instanceUrl
+						: `${instanceUrl}/api/v3`;
+				}
+			} catch {
+				this.noticeManager.error(
+					"Invalid GitHub base URL. Enter your instance URL (https://github.example.com) or REST API URL ending in /api/v3.",
+				);
+				return;
+			}
+		}
+
+		// Octokit maps Enterprise /api/v3 to /api/graphql for Projects queries.
 		this.octokit = new Octokit({
 			auth: authToken,
+			baseUrl,
 		});
 	}
 
